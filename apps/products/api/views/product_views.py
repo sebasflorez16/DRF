@@ -11,8 +11,9 @@ class ProductListAPIView(GeneralListAPIView):
     serializer_class = ProductSerializer
 
 #Create
-class ProductCreateAPIView(generics.CreateAPIView):
+class ProductListCreateAPIView(generics.ListCreateAPIView): #Esa vista mezcla las el POST Y EL GET dentro de la misma vista.
     serializer_class = ProductSerializer
+    queryset = ProductSerializer.Meta.model.objects.filter(state = True)
 
     def post(self, request):
         serializer = self.serializer_class(data = request.data)
@@ -23,15 +24,49 @@ class ProductCreateAPIView(generics.CreateAPIView):
             status = status.HTTP_400_BAD_REQUEST)
 
 #Detail
-class ProductRetrieveAPIView(generics.RetrieveAPIView):
+class ProductRetrieveUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ProductSerializer
 
-    def get_queryset(self):
-        return self.get_serializer().Meta.model.objects.filter(state = True)
+    def get_queryset(self, pk=None):
+        if pk is None:
+            return self.get_serializer().Meta.model.objects.filter(state = True)
+        return self.get_serializer().Meta.model.objects.filter(id = pk, state = True).first()
 
+
+    #El PUT actualiza la instancia
+    def put(self, request, pk = None):
+        if self.get_queryset(pk):
+            product_serializer = self.serializer_class(self.get_queryset(pk), data = request.data)
+            if product_serializer.is_valid():
+                product_serializer.save()
+                return Response (product_serializer.data, status = status.HTTP_200_OK)
+
+            return Response({'message':'El producto no fue encontrado'}, status = status.HTTP_400_BAD_REQUEST)
+
+
+
+    #El PATCH obtiene la instancia
+    def patch(self, request, pk = None):
+        if self.get_queryset(pk):
+            product_serializer = self.serializer_class(self.get_queryset(pk))
+            return Response(product_serializer.data, status = status.HTTP_200_OK)
+        
+        return Response({'error':'El producto no fue encontrado'}, status = status.HTTP_400_BAD_REQUEST)
+
+
+    def delete(self, request, pk = None):
+        product = self.get_queryset().filter(id = pk).first()
+        if product:
+            product.state = False
+            product.save()
+            return Response({'message':'Producto eliminado correctamente'}, status = status.HTTP_200_OK)
+        return Response({'message':'El producto no fue encontrado'}, status = status.HTTP_400_BAD_REQUEST)
+    
+        
+    
 
 #Delete 
-class ProductDestroyAPIView(generics.DestroyAPIView):
+"""class ProductDestroyAPIView(generics.DestroyAPIView):
     serializer_class = ProductSerializer
 
 #Eliminacion directa
@@ -47,12 +82,11 @@ class ProductDestroyAPIView(generics.DestroyAPIView):
             return Response({'message':'Producto eliminado correctamente'}, status = status.HTTP_200_OK)
         return Response({'message':'El producto no fue encontrado'}, status = status.HTTP_400_BAD_REQUEST)
 
-
 #Update
 class ProductUpdateAPIView(generics.UpdateAPIView):
     serializer_class = ProductSerializer
 
-    """def get_queryset(self):
+    def get_queryset(self):
         return self.get_serializer().Meta.model.objects.filter(state = True)
 
 
@@ -63,7 +97,7 @@ class ProductUpdateAPIView(generics.UpdateAPIView):
             return Response(product_serializer.data, status = status.HTTP_200_OK) # Esto devuelve la data de la instancia a la interfaz
 
 
-        return Response({'message':'El producto no fue encontrado'}, status = status.HTTP_400_BAD_REQUEST)"""
+        return Response({'message':'El producto no fue encontrado'}, status = status.HTTP_400_BAD_REQUEST)
 
 
 #Version refactorizada del codigoanterior y y redefiniendo el metodo put
@@ -87,7 +121,7 @@ class ProductUpdateAPIView(generics.UpdateAPIView):
                 product_serializer.save()
                 return Response (product_serializer.data, status = status.HTTP_200_OK)
 
-            return Response({'message':'El producto no fue encontrado'}, status = status.HTTP_400_BAD_REQUEST)
+            return Response({'message':'El producto no fue encontrado'}, status = status.HTTP_400_BAD_REQUEST)"""
 
         
 
