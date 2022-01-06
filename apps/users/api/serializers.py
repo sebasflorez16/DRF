@@ -3,10 +3,18 @@
 ##  Archivo donde vamos a manejar los serializadores  ##
 ########################################################
 
+from django.db.models import fields
 from django.db.models.base import Model
 from rest_framework import serializers
 from apps.users.models import User
 
+
+
+#Recibe la peticion de la vista para un usuario nuevo
+class UserTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=User
+        fields = ('username', 'email', 'name', 'last_name')
 
 
 
